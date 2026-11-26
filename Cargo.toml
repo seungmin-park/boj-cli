@@ -1,6 +1,6 @@
 [package]
 name = "boj"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "문제 번호 하나로 백준 예제를 받고 바로 채점하는 CLI"
 license = "MIT OR Apache-2.0"
