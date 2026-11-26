@@ -1,25 +1,36 @@
 # boj
 
-문제 번호 하나로 백준 예제를 받아 오고, 바로 로컬에서 채점하는 CLI예요.
+[![ci](https://github.com/seungmin-park/boj-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/seungmin-park/boj-cli/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/seungmin-park/boj-cli)](https://github.com/seungmin-park/boj-cli/releases/latest)
+
+`boj 1000` 한 줄로 백준 예제를 파일로 받고, `boj test`로 바로 채점하는 CLI예요. Java, C++, Python, Kotlin을 지원해요.
 
 ```console
-$ boj 2309
+$ boj 1000
 만들었어요
-  2309/.boj.toml
-  2309/Main.java
-  2309/tests/1.in
-  2309/tests/1.out
-폴더: 2309
+  1000/.boj.toml
+  1000/Main.java
+  1000/tests/1.in
+  1000/tests/1.out
+폴더: 1000
 
-$ cd 2309 && boj test
-1  맞음  59ms
+$ cd 1000 && boj test
+1  틀림  42ms
+    줄 1: 기대 "3" / 실제 "-1"
+0/1 맞음  (시간 제한 5000ms)
+
+$ boj test        # a - b 를 a + b 로 고친 뒤
+1  맞음  42ms
 1/1 맞음  (시간 제한 5000ms)
+
+$ boj copy        # package 줄을 뺀 제출용 코드를 클립보드로
+제출용 코드를 클립보드에 복사했어요
 ```
 
-- **예제를 원문 그대로 가져와요.** 백준 페이지에서 직접 읽어서, 손으로 옮기다 공백이나 줄바꿈을 틀릴 일이 없어요.
-- **채점기가 들어 있어요.** 판정은 맞음, 틀림(첫 차이 줄 표시), 시간 초과, 런타임 에러, 컴파일 에러로 나와요. Gradle이나 IDE는 필요 없어요.
-- **같은 입력이면 항상 같은 결과가 나오고 빨라요.** 문제 정보는 한 번만 받아서 저장하고, 그다음부터는 네트워크를 쓰지 않아요.
-- **템플릿과 언어를 설정 파일로 바꿀 수 있어요.** Java, C++, Python, Kotlin을 기본 지원하고, 다른 언어는 설정 블록 하나로 추가해요.
+- **예제는 백준 원문 그대로예요.** 문제 페이지의 예제 블록을 그대로 저장해서 공백과 줄바꿈까지 같아요. 손으로 옮기거나 AI 챗에 옮겨 달라고 할 필요가 없어요.
+- **틀리면 처음 달라진 줄을 보여 줘요.** 판정은 맞음, 틀림, 시간 초과, 런타임 에러, 컴파일 에러로 나뉘어요. 직접 만든 `tests/my1.in`, `my1.out`도 같이 채점해요.
+- **문제당 한 번만 요청해요.** 받아 온 제목, 시간 제한, 예제는 문제 폴더에 저장해요. 그 뒤로는 네트워크 없이 채점해요.
+- **평소 쓰던 템플릿으로 시작해요.** `static BufferedReader br`로 시작하는 내 뼈대를 `.boj/templates/`에 두면 그걸로 만들어요. 다른 언어도 설정 블록 하나로 추가해요.
 
 ## 설치
 
@@ -37,7 +48,7 @@ powershell -ExecutionPolicy Bypass -c "irm https://github.com/seungmin-park/boj-
 cargo install --git https://github.com/seungmin-park/boj-cli
 ```
 
-풀 언어의 도구가 PATH에 있어야 해요.
+업데이트는 `brew upgrade boj`로 해요. 풀 언어의 컴파일러나 인터프리터는 PATH에 있어야 해요.
 
 | 언어 (`-l`) | 소스 파일 | 필요한 도구 | 시간 제한 |
 |---|---|---|---|
@@ -61,14 +72,12 @@ cargo install --git https://github.com/seungmin-park/boj-cli
 | `boj copy [번호] [-l 언어] [--stdout]` | `package` 줄 같은 걸 빼고 제출용 코드를 클립보드에 복사해요 |
 | `boj open [번호] [--print]` | 문제 페이지를 브라우저로 열어요 |
 
-`tests/`에 `my1.in`, `my1.out`처럼 직접 만든 케이스를 넣으면 같이 채점해요.
-
 `test`와 `copy`는 다음 순서로 언어를 정해요.
 1. `-l`로 지정한 언어
 2. 폴더에 소스가 하나뿐이면 그 언어
 3. 처음 만들 때의 언어
 
-같은 문제를 두 언어로 풀면, 예를 들어 `boj 1000 -l py`로 `main.py`를 추가하면, `-l`로 골라 달라고 안내해요.
+같은 문제를 두 언어로 풀 수도 있어요. `boj 1000 -l py`로 `main.py`를 더 만들면 폴더에 소스가 두 개가 돼요. 그때부터는 `boj test -l py`처럼 언어를 골라 달라고 안내해요.
 
 종료 코드는 다음과 같아요.
 
