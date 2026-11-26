@@ -36,15 +36,15 @@ fn run(cli: Cli) -> Result<i32, BojError> {
             print_new(&report, &cwd);
             Ok(0)
         }
-        (Some(Command::Test { id }), _) => {
+        (Some(Command::Test { id, lang }), _) => {
             let ctx = Ctx::new(&cwd, config::global_dir())?;
-            let report = cmd::test::run_test(&ctx, id)?;
+            let report = cmd::test::run_test(&ctx, id, lang.as_deref())?;
             print!("{}", cmd::test::render_report(&report));
             Ok(report.exit_code())
         }
-        (Some(Command::Copy { id, stdout }), _) => {
+        (Some(Command::Copy { id, lang, stdout }), _) => {
             let ctx = Ctx::new(&cwd, config::global_dir())?;
-            match cmd::copy::run_copy(&ctx, id, stdout)? {
+            match cmd::copy::run_copy(&ctx, id, lang.as_deref(), stdout)? {
                 Copied::Clipboard => println!("제출용 코드를 클립보드에 복사했어요"),
                 Copied::Stdout(code) => print!("{code}"),
             }

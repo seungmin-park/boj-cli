@@ -19,7 +19,7 @@ $ cd 2309 && boj test
 - **예제를 원문 그대로 가져와요.** 백준 페이지에서 직접 읽어서, 손으로 옮기다 공백이나 줄바꿈을 틀릴 일이 없어요.
 - **채점기가 들어 있어요.** 판정은 맞음, 틀림(첫 차이 줄 표시), 시간 초과, 런타임 에러, 컴파일 에러로 나와요. Gradle이나 IDE는 필요 없어요.
 - **같은 입력이면 항상 같은 결과가 나오고 빨라요.** 문제 정보는 한 번만 받아서 저장하고, 그다음부터는 네트워크를 쓰지 않아요.
-- **템플릿과 언어를 설정 파일로 바꿀 수 있어요.** v1은 Java를 기본 지원하고, 다른 언어는 설정 블록 하나로 추가해요.
+- **템플릿과 언어를 설정 파일로 바꿀 수 있어요.** Java, C++, Python, Kotlin을 기본 지원하고, 다른 언어는 설정 블록 하나로 추가해요.
 
 ## 설치
 
@@ -37,7 +37,17 @@ powershell -ExecutionPolicy Bypass -c "irm https://github.com/seungmin-park/boj-
 cargo install --git https://github.com/seungmin-park/boj-cli
 ```
 
-Java 문제를 풀려면 `javac`와 `java`가 PATH에 있어야 해요.
+풀 언어의 도구가 PATH에 있어야 해요.
+
+| 언어 (`-l`) | 소스 파일 | 필요한 도구 | 시간 제한 |
+|---|---|---|---|
+| `java` (기본) | `Main.java` | `javac`, `java` | ×2 + 1초 |
+| `cpp` | `main.cpp` | `g++` | 그대로 |
+| `py` | `main.py` | `python3` | ×3 + 2초 |
+| `kt` | `Main.kt` | `kotlinc`, `java` | ×2 + 1초 |
+
+- 시간 제한은 백준의 언어별 추가 시간을 흉내 낸 값이에요.
+- Windows에는 `python3` 명령이 없는 경우가 많아요. 그럴 땐 설정에 `[lang.py] run = "python {{file}}"`을 넣어 주세요.
 
 ## 명령
 
@@ -47,11 +57,18 @@ Java 문제를 풀려면 `javac`와 `java`가 PATH에 있어야 해요.
 | `boj <번호> -l <언어>` | 언어를 지정해요 |
 | `boj <번호> -t <이름>` | 같은 언어의 다른 템플릿(`<언어>-<이름>.*`)을 써요 |
 | `boj <번호> --offline` | 네트워크 없이 소스와 메타만 만들어요 |
-| `boj test [번호]` | 컴파일하고 `tests/`의 모든 `*.in`/`*.out` 짝을 채점해요. 번호를 생략하면 현재 문제 폴더를 써요 |
-| `boj copy [번호] [--stdout]` | `package` 줄 같은 걸 빼고 제출용 코드를 클립보드에 복사해요 |
+| `boj test [번호] [-l 언어]` | 컴파일하고 `tests/`의 모든 `*.in`/`*.out` 짝을 채점해요. 번호를 생략하면 현재 문제 폴더를 써요 |
+| `boj copy [번호] [-l 언어] [--stdout]` | `package` 줄 같은 걸 빼고 제출용 코드를 클립보드에 복사해요 |
 | `boj open [번호] [--print]` | 문제 페이지를 브라우저로 열어요 |
 
 `tests/`에 `my1.in`, `my1.out`처럼 직접 만든 케이스를 넣으면 같이 채점해요.
+
+`test`와 `copy`는 다음 순서로 언어를 정해요.
+1. `-l`로 지정한 언어
+2. 폴더에 소스가 하나뿐이면 그 언어
+3. 처음 만들 때의 언어
+
+같은 문제를 두 언어로 풀면, 예를 들어 `boj 1000 -l py`로 `main.py`를 추가하면, `-l`로 골라 달라고 안내해요.
 
 종료 코드는 다음과 같아요.
 
@@ -102,26 +119,22 @@ compile = "javac -encoding UTF-8 --release 8 -d {{build}} {{file}}"   # 기본 -
 ### 다른 언어 추가
 
 ```toml
-[lang.cpp]
-file = "main.cpp"
-template = "cpp"                      # templates/cpp.cpp 를 만들어 두세요
-compile = "g++ -O2 -std=gnu++17 -o {{build}}/a.out {{file}}"
-run = "{{build}}/a.out"
-
-[lang.py]
-file = "main.py"
-template = "py"
-run = "python3 {{file}}"
-time = "x3 + 2s"                      # 백준 언어별 추가 시간 근사
+[lang.rs]
+file = "main.rs"
+template = "rs"                       # templates/rs.rs 를 만들어 두세요
+compile = "rustc -O -o {{build}}/main {{file}}"
+run = "{{build}}/main"
+time = ""                             # 백준 언어별 추가 시간 근사 (예: "x2 + 1s")
 ```
 
-C++, Python, Kotlin 내장 지원은 다음 버전에 들어가요.
+PyPy로 채점하려면 `[lang.py] run = "pypy3 {{file}}"`처럼 내장 언어의 값만 바꾸면 돼요.
 
 ## 한계
 
 - **스페셜 저지 문제:** 출력이 예제와 달라도 정답일 수 있어요. 이럴 땐 "확인 필요"로만 표시해요.
 - **인터랙티브 문제:** 지원하지 않아요.
 - **시간 제한:** 백준 채점 서버와 같지 않아서 참고용이에요.
+- **macOS 첫 실행 지연:** 새로 컴파일한 실행 파일을 처음 실행하면 macOS 보안 검사 때문에 첫 케이스에만 수십~수백 ms가 더 찍혀요. C++ A+B 기준 첫 케이스는 60~230ms, 나머지는 1ms였어요.
 
 ## 개발
 

@@ -51,6 +51,17 @@ $BOJ open --print                  # 기대: https://www.acmicpc.net/problem/230
 cd "$WORK" && $BOJ 99999999; echo "exit=$?"   # 기대: 찾을 수 없어요, exit=2, 폴더 없음
 ```
 
+## 다른 언어 (도구가 있는 것만)
+
+```bash
+cd "$WORK" && $BOJ 1000 -l py && $BOJ 1000 -l cpp && $BOJ 1000 -l kt   # 같은 폴더에 main.py, main.cpp, Main.kt 추가
+cd 1000 && $BOJ test; echo "exit=$?"                                     # 기대: 여러 언어 소스 안내, exit=2
+printf 'a, b = map(int, input().split())\nprint(a + b)\n' > main.py
+printf '#include <iostream>\nint main(){long long a,b;std::cin>>a>>b;std::cout<<a+b<<"\\n";}\n' > main.cpp
+printf 'fun main() {\n    val (a, b) = readLine()!!.trim().split(" ").map { it.toInt() }\n    println(a + b)\n}\n' > Main.kt
+for l in py cpp kt; do $BOJ test -l $l; echo "$l exit=$?"; done            # 기대: 각각 1/1 맞음, exit=0
+```
+
 ## 증거
 
 명령, 출력, 종료 코드를 PR 본문이나 `docs/features/scaffold-and-test.md`의 실행 기록에 남긴다. 커밋 SHA, OS, rustc, JDK 버전도 함께 적는다.

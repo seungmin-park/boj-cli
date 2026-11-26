@@ -16,7 +16,12 @@ pub const PLACEHOLDERS: [&str; 7] = [
     "main_class",
 ];
 
-const BUILTIN_TEMPLATES: &[(&str, &str)] = &[("java", include_str!("templates/java.java"))];
+const BUILTIN_TEMPLATES: &[(&str, &str)] = &[
+    ("java", include_str!("templates/java.java")),
+    ("cpp", include_str!("templates/cpp.cpp")),
+    ("py", include_str!("templates/py.py")),
+    ("kt", include_str!("templates/kt.kt")),
+];
 
 /// `{{name}}`을 치환하고, 패키지가 비어 생긴 `package ;` 줄을 지운다.
 pub fn render(src: &str, vars: &Vars) -> Result<String, BojError> {
@@ -206,6 +211,24 @@ mod tests {
         assert!(package_warning("1000").is_some());
         assert!(package_warning("boj.1000").is_some());
         assert!(package_warning("p1000").is_none());
+    }
+
+    #[test]
+    fn every_builtin_template_renders() {
+        let v = vars(&[
+            ("id", "1000"),
+            ("title", "A+B"),
+            ("dir", "/x"),
+            ("file", "f"),
+            ("package", ""),
+            ("main_class", "Main"),
+        ]);
+        for name in ["java", "cpp", "py", "kt"] {
+            let src = load_template(name, None, None, None).unwrap();
+            let out = render(&src, &v).unwrap();
+            assert!(out.contains("1000 A+B"), "{name}: {out}");
+            assert!(!out.contains("{{"), "{name}");
+        }
     }
 
     #[test]

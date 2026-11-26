@@ -34,10 +34,15 @@ pub enum Copied {
 }
 
 /// `boj copy`: 제출용 코드를 클립보드(또는 표준 출력)로.
-pub fn run_copy(ctx: &Ctx, id: Option<u32>, stdout_only: bool) -> Result<Copied, BojError> {
+pub fn run_copy(
+    ctx: &Ctx,
+    id: Option<u32>,
+    lang: Option<&str>,
+    stdout_only: bool,
+) -> Result<Copied, BojError> {
     let dir = ctx.resolve_problem_dir(id)?;
     let meta = Meta::read(&dir)?.ok_or(BojError::NoProblemDir)?;
-    let lang = ctx.config.lang(&meta.lang)?;
+    let lang = ctx.config.lang(&ctx.resolve_lang(&dir, &meta, lang)?)?;
     let path = dir.join(&lang.file);
     let src = std::fs::read_to_string(&path)
         .map_err(|_| BojError::Usage(format!("소스 파일이 없어요: {}", path.display())))?;

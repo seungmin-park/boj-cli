@@ -56,6 +56,39 @@ impl Ctx {
         })
     }
 
+    /// 채점·복사할 언어. `-l` > 폴더에 소스가 하나뿐이면 그 언어 > 메타의 언어.
+    /// 여러 언어 소스가 같이 있으면 `-l`을 요구한다.
+    pub fn resolve_lang(
+        &self,
+        dir: &Path,
+        meta: &meta::Meta,
+        explicit: Option<&str>,
+    ) -> Result<String, BojError> {
+        if let Some(l) = explicit {
+            self.config.lang(l)?;
+            return Ok(l.to_string());
+        }
+        let present: Vec<(&String, &String)> = self
+            .config
+            .langs
+            .iter()
+            .filter(|(_, l)| dir.join(&l.file).is_file())
+            .map(|(name, l)| (name, &l.file))
+            .collect();
+        match present.as_slice() {
+            [] => Ok(meta.lang.clone()),
+            [(name, _)] => Ok((*name).clone()),
+            many => {
+                let list: Vec<String> = many.iter().map(|(n, f)| format!("{f}({n})")).collect();
+                Err(BojError::Usage(format!(
+                    "여러 언어 소스가 있어요: {}. -l 로 골라 주세요 (예: boj test -l {})",
+                    list.join(", "),
+                    many[0].0
+                )))
+            }
+        }
+    }
+
     /// 번호가 있으면 설정 경로로, 없으면 현재 폴더에서 위로 찾는다.
     pub fn resolve_problem_dir(&self, id: Option<u32>) -> Result<PathBuf, BojError> {
         match id {
@@ -69,5 +102,59 @@ impl Ctx {
             }
             None => meta::find_problem_dir(&self.cwd).ok_or(BojError::NoProblemDir),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::meta::Meta;
+    use std::fs;
+
+    fn meta(lang: &str) -> Meta {
+        Meta {
+            id: 1000,
+            title: "A+B".into(),
+            time_limit_ms: Some(2000),
+            special_judge: false,
+            samples: 1,
+            lang: lang.into(),
+        }
+    }
+
+    #[test]
+    fn resolve_lang_rules() {
+        let t = tempfile::tempdir().unwrap();
+        let ctx = Ctx::new(t.path(), None).unwrap();
+        let dir = t.path();
+
+        // 소스가 없으면 메타의 언어
+        assert_eq!(ctx.resolve_lang(dir, &meta("java"), None).unwrap(), "java");
+        // 명시하면 그 언어, 모르는 언어는 설정 오류
+        assert_eq!(
+            ctx.resolve_lang(dir, &meta("java"), Some("py")).unwrap(),
+            "py"
+        );
+        assert!(matches!(
+            ctx.resolve_lang(dir, &meta("java"), Some("cobol")),
+            Err(BojError::Config(_))
+        ));
+        // 소스가 하나뿐이면 그 언어 (메타와 달라도)
+        fs::write(dir.join("main.cpp"), "").unwrap();
+        assert_eq!(ctx.resolve_lang(dir, &meta("java"), None).unwrap(), "cpp");
+        // 둘 이상이면 -l 요구
+        fs::write(dir.join("Main.java"), "").unwrap();
+        let err = ctx
+            .resolve_lang(dir, &meta("java"), None)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("-l") && err.contains("Main.java") && err.contains("main.cpp"),
+            "{err}"
+        );
+        assert_eq!(
+            ctx.resolve_lang(dir, &meta("java"), Some("cpp")).unwrap(),
+            "cpp"
+        );
     }
 }

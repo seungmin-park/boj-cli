@@ -11,3 +11,26 @@ compile = "javac -encoding UTF-8 --release 11 -d {{build}} {{file}}"
 run = "java -Xss256m -cp {{build}} {{main_class}}"
 strip = ['^\s*package\s+[\w.]+;\s*$']
 time = "x2 + 1s"
+
+# 백준 C++17 과 같은 방식. macOS의 g++는 clang이라 bits/stdc++.h 없이 표준 헤더를 쓴다.
+[lang.cpp]
+file = "main.cpp"
+template = "cpp"
+compile = "g++ -O2 -std=gnu++17 -o {{build}}/main {{file}}"
+run = "{{build}}/main"
+time = ""
+
+# Windows에서는 run = "python {{file}}" 로 덮어쓴다.
+[lang.py]
+file = "main.py"
+template = "py"
+run = "python3 {{file}}"
+time = "x3 + 2s"
+
+[lang.kt]
+file = "Main.kt"
+template = "kt"
+compile = "kotlinc {{file}} -include-runtime -d {{build}}/main.jar"
+run = "java -Xss256m -jar {{build}}/main.jar"
+strip = ['^\s*package\s+[\w.]+\s*$']
+time = "x2 + 1s"

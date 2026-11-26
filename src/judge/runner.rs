@@ -131,20 +131,39 @@ pub(crate) mod tests {
     use super::*;
     use std::fs;
 
-    /// javac가 없으면 건너뛴다. CI는 BOJ_REQUIRE_JAVA=1로 건너뛰기를 막는다.
-    pub(crate) fn java_available() -> bool {
-        let ok = Command::new("javac")
-            .arg("-version")
+    /// 언어 도구가 없으면 테스트를 건너뛴다. CI는 `BOJ_REQUIRE_LANGS=java,cpp,...`로
+    /// 적은 언어의 건너뛰기를 막는다 (도구가 없으면 실패).
+    pub(crate) fn tool_available(lang: &str) -> bool {
+        let probe: &[&str] = match lang {
+            "java" => &["javac", "-version"],
+            "cpp" => &["g++", "--version"],
+            "py" => &["python3", "--version"],
+            "kt" => &["kotlinc", "-version"],
+            other => panic!("알 수 없는 언어: {other}"),
+        };
+        let ok = Command::new(probe[0])
+            .args(&probe[1..])
             .output()
             .map(|o| o.status.success())
             .unwrap_or(false);
-        if !ok && std::env::var_os("BOJ_REQUIRE_JAVA").is_some() {
-            panic!("BOJ_REQUIRE_JAVA가 설정됐는데 javac가 없어요");
+        let required = std::env::var("BOJ_REQUIRE_LANGS")
+            .unwrap_or_default()
+            .split(',')
+            .any(|l| l.trim() == lang);
+        if !ok && required {
+            panic!(
+                "BOJ_REQUIRE_LANGS에 {lang}이 있는데 `{}`이 없어요",
+                probe[0]
+            );
         }
         if !ok {
-            eprintln!("javac가 없어 채점 테스트를 건너뜀");
+            eprintln!("{} 이 없어 {lang} 채점 테스트를 건너뜀", probe[0]);
         }
         ok
+    }
+
+    pub(crate) fn java_available() -> bool {
+        tool_available("java")
     }
 
     fn java_program(body: &str) -> (tempfile::TempDir, Vec<String>) {

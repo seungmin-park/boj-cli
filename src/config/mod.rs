@@ -176,6 +176,28 @@ mod tests {
     }
 
     #[test]
+    fn builtin_languages() {
+        let c = load(None, None).unwrap();
+        assert_eq!(
+            c.langs.keys().collect::<Vec<_>>(),
+            ["cpp", "java", "kt", "py"]
+        );
+        assert_eq!(c.lang("cpp").unwrap().file, "main.cpp");
+        assert_eq!(c.lang("cpp").unwrap().time, "");
+        assert_eq!(c.lang("py").unwrap().compile, None);
+        assert_eq!(c.lang("py").unwrap().time, "x3 + 2s");
+        assert_eq!(c.lang("kt").unwrap().file, "Main.kt");
+        assert_eq!(c.lang("kt").unwrap().time, "x2 + 1s");
+        let files: std::collections::BTreeSet<_> =
+            c.langs.values().map(|l| l.file.to_lowercase()).collect();
+        assert_eq!(
+            files.len(),
+            c.langs.len(),
+            "언어마다 소스 파일 이름이 달라야 자동 판별이 된다"
+        );
+    }
+
+    #[test]
     fn global_overrides_one_field() {
         let g = tempfile::tempdir().unwrap();
         write(
