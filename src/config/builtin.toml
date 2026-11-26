@@ -1,0 +1,13 @@
+# 내장 기본값. 사용자는 ~/.config/boj/config.toml 이나 프로젝트의 .boj/config.toml 에서
+# 바꾸고 싶은 키만 적으면 된다.
+default = "java"
+path = "{{id}}"
+tests = "{{dir}}/tests"
+
+[lang.java]
+file = "Main.java"
+template = "java"
+compile = "javac -encoding UTF-8 --release 11 -d {{build}} {{file}}"
+run = "java -Xss256m -cp {{build}} {{main_class}}"
+strip = ['^\s*package\s+[\w.]+;\s*$']
+time = "x2 + 1s"
