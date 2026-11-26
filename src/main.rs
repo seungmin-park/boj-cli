@@ -1,6 +1,7 @@
 mod cli;
 mod error;
 mod fetch;
+mod judge;
 mod problem;
 
 use clap::Parser;
