@@ -9,8 +9,6 @@ pub enum BojError {
     Network(String),
     #[error("{0}번 문제를 찾을 수 없어요")]
     ProblemNotFound(u32),
-    #[error("문제 페이지를 읽지 못했어요: {0}")]
-    Parse(String),
     #[error("문제 폴더를 찾을 수 없어요. 문제 폴더 안에서 실행하거나 번호를 같이 적어 주세요")]
     NoProblemDir,
     #[error("파일 오류: {0}")]

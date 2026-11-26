@@ -30,7 +30,7 @@ pub fn compare(expected: &str, actual: &str) -> Compare {
 fn lines(text: &str) -> Vec<&str> {
     let mut v: Vec<&str> = text
         .split('\n')
-        .map(|l| l.trim_end_matches(|c: char| c == ' ' || c == '\t' || c == '\r'))
+        .map(|l| l.trim_end_matches([' ', '\t', '\r']))
         .collect();
     while v.last() == Some(&"") {
         v.pop();

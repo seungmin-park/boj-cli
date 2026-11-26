@@ -1,4 +1,6 @@
+pub mod copy;
 pub mod new;
+pub mod open;
 pub mod test;
 
 use std::path::{Path, PathBuf};
