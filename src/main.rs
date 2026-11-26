@@ -4,6 +4,7 @@ mod error;
 mod fetch;
 mod judge;
 mod problem;
+mod template;
 
 use clap::Parser;
 use cli::{Cli, Command};

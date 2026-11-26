@@ -62,7 +62,7 @@ pub fn find_project_root(start: &Path) -> Option<PathBuf> {
         .map(Path::to_path_buf)
 }
 
-/// 전역 설정 폴더. `BOJ_CONFIG_DIR` > `$XDG_CONFIG_HOME/boj` > `~/.config/boj` (Windows는 %APPDATA%\\boj)
+/// 전역 설정 폴더. `BOJ_CONFIG_DIR` > `$XDG_CONFIG_HOME/boj` > `~/.config/boj` (Windows는 %APPDATA%/boj)
 pub fn global_dir() -> Option<PathBuf> {
     if let Some(d) = std::env::var_os("BOJ_CONFIG_DIR") {
         return Some(d.into());
