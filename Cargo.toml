@@ -1,0 +1,33 @@
+[package]
+name = "boj"
+version = "0.1.0"
+edition = "2021"
+description = "문제 번호 하나로 백준 예제를 받고 바로 채점하는 CLI"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/seungmin-park/boj-cli"
+readme = "README.md"
+keywords = ["baekjoon", "boj", "competitive-programming", "cli", "judge"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "boj"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+scraper = "0.20"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+dirs = "5"
+shell-words = "1"
+wait-timeout = "0.2"
+regex = "1"
+arboard = { version = "3", default-features = false }
+open = "5"
+thiserror = "1"
+tempfile = "3"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
