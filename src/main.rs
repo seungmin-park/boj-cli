@@ -1,5 +1,7 @@
 mod cli;
 mod error;
+mod fetch;
+mod problem;
 
 use clap::Parser;
 use cli::{Cli, Command};
