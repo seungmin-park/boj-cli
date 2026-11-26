@@ -1,4 +1,5 @@
 pub mod new;
+pub mod test;
 
 use std::path::{Path, PathBuf};
 
