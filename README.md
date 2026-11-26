@@ -24,10 +24,20 @@ $ cd 2309 && boj test
 ## 설치
 
 ```bash
+# macOS / Linux (Homebrew)
+brew install seungmin-park/tap/boj
+
+# macOS / Linux (설치 스크립트)
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/seungmin-park/boj-cli/releases/latest/download/boj-installer.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/seungmin-park/boj-cli/releases/latest/download/boj-installer.ps1 | iex"
+
+# 소스에서
 cargo install --git https://github.com/seungmin-park/boj-cli
 ```
 
-Homebrew 설치와 릴리스 바이너리는 준비 중이에요. Java 문제를 풀려면 `javac`와 `java`가 PATH에 있어야 해요.
+Java 문제를 풀려면 `javac`와 `java`가 PATH에 있어야 해요.
 
 ## 명령
 
@@ -123,6 +133,7 @@ cargo test -- --ignored       # 실제 백준 요청 테스트
 - 구조와 규칙: [docs/engineering/architecture.md](docs/engineering/architecture.md)
 - 기능 지도: [docs/features/README.md](docs/features/README.md)
 - 실제 흐름 검증 절차: [.agents/skills/verify-boj/SKILL.md](.agents/skills/verify-boj/SKILL.md)
+- 릴리스 절차: [docs/release.md](docs/release.md)
 - 계획: [plan.md](plan.md), 진행: [tasks.md](tasks.md)
 
 ## 라이선스
