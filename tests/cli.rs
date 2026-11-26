@@ -38,16 +38,34 @@ fn boj_in(dir: &Path) -> Command {
     cmd
 }
 
-fn java_available() -> bool {
-    let ok = std::process::Command::new("javac")
-        .arg("-version")
+fn tool_available(lang: &str) -> bool {
+    let probe: &[&str] = match lang {
+        "java" => &["javac", "-version"],
+        "cpp" => &["g++", "--version"],
+        "py" => &["python3", "--version"],
+        "kt" => &["kotlinc", "-version"],
+        other => panic!("알 수 없는 언어: {other}"),
+    };
+    let ok = std::process::Command::new(probe[0])
+        .args(&probe[1..])
         .output()
         .map(|o| o.status.success())
         .unwrap_or(false);
-    if !ok && std::env::var_os("BOJ_REQUIRE_JAVA").is_some() {
-        panic!("BOJ_REQUIRE_JAVA가 설정됐는데 javac가 없어요");
+    let required = std::env::var("BOJ_REQUIRE_LANGS")
+        .unwrap_or_default()
+        .split(',')
+        .any(|l| l.trim() == lang);
+    if !ok && required {
+        panic!(
+            "BOJ_REQUIRE_LANGS에 {lang}이 있는데 `{}`이 없어요",
+            probe[0]
+        );
     }
     ok
+}
+
+fn java_available() -> bool {
+    tool_available("java")
 }
 
 const AB_MAIN: &str = "import java.util.*;\npublic class Main { public static void main(String[] a) { Scanner s = new Scanner(System.in); System.out.println(s.nextInt() + s.nextInt()); } }\n";
@@ -176,4 +194,67 @@ fn e2e_test_outside_problem_dir() {
         .assert()
         .code(2)
         .stderr(contains("문제 폴더를 찾을 수 없어요"));
+}
+
+const AB_PY: &str = "a, b = map(int, input().split())\nprint(a + b)\n";
+
+#[test]
+fn e2e_python_new_then_test() {
+    if !tool_available("py") {
+        return;
+    }
+    let t = tempfile::tempdir().unwrap();
+    boj_in(t.path())
+        .args(["1000", "-l", "py"])
+        .assert()
+        .success()
+        .stdout(contains("main.py"));
+    let dir = t.path().join("1000");
+    assert!(fs::read_to_string(dir.join("main.py"))
+        .unwrap()
+        .contains("# 1000 A+B"));
+    fs::write(dir.join("main.py"), AB_PY).unwrap();
+    boj_in(&dir)
+        .arg("test")
+        .assert()
+        .code(0)
+        .stdout(contains("1/1 맞음"));
+}
+
+#[test]
+fn e2e_two_languages_need_flag() {
+    if !(java_available() && tool_available("py")) {
+        return;
+    }
+    let t = tempfile::tempdir().unwrap();
+    boj_in(t.path()).arg("1000").assert().success();
+    boj_in(t.path())
+        .args(["1000", "-l", "py"])
+        .assert()
+        .success();
+    let dir = t.path().join("1000");
+    fs::write(dir.join("Main.java"), AB_MAIN).unwrap();
+    fs::write(dir.join("main.py"), AB_PY).unwrap();
+    boj_in(&dir)
+        .arg("test")
+        .assert()
+        .code(2)
+        .stderr(contains("-l"))
+        .stderr(contains("Main.java"))
+        .stderr(contains("main.py"));
+    boj_in(&dir)
+        .args(["test", "-l", "java"])
+        .assert()
+        .code(0)
+        .stdout(contains("1/1 맞음"));
+    boj_in(&dir)
+        .args(["test", "-l", "py"])
+        .assert()
+        .code(0)
+        .stdout(contains("1/1 맞음"));
+    boj_in(&dir)
+        .args(["copy", "-l", "py", "--stdout"])
+        .assert()
+        .success()
+        .stdout(AB_PY);
 }

@@ -85,10 +85,10 @@ pub fn collect_cases(tests_dir: &Path) -> Vec<(String, PathBuf, PathBuf)> {
 }
 
 /// `boj test`: 컴파일하고 모든 케이스를 채점한다.
-pub fn run_test(ctx: &Ctx, id: Option<u32>) -> Result<TestReport, BojError> {
+pub fn run_test(ctx: &Ctx, id: Option<u32>, lang: Option<&str>) -> Result<TestReport, BojError> {
     let dir = ctx.resolve_problem_dir(id)?;
     let meta = Meta::read(&dir)?.ok_or(BojError::NoProblemDir)?;
-    let lang = ctx.config.lang(&meta.lang)?;
+    let lang = ctx.config.lang(&ctx.resolve_lang(&dir, &meta, lang)?)?;
     let tests_dir = ctx.tests_dir(&dir, meta.id)?;
     let rule = TimeRule::parse(&lang.time)?;
     let limit_ms = rule.apply(meta.time_limit_ms.unwrap_or(DEFAULT_LIMIT_MS));
@@ -247,7 +247,7 @@ mod tests {
     use super::*;
     use crate::cmd::new::{run_new, NewArgs};
     use crate::fetch::FixtureFetcher;
-    use crate::judge::runner::tests::java_available;
+    use crate::judge::runner::tests::{java_available, tool_available};
     use std::fs;
 
     fn fixtures() -> FixtureFetcher {
@@ -295,7 +295,7 @@ mod tests {
             return;
         }
         let (_t, dir) = setup(1000, AB);
-        let r = run_test(&Ctx::new(&dir, None).unwrap(), None).unwrap();
+        let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
         assert_eq!(r.cases.len(), 1);
         assert_eq!(r.cases[0].verdict, Verdict::Ok);
         assert_eq!(r.limit_ms, 2000 * 2 + 1000);
@@ -312,7 +312,7 @@ mod tests {
             1000,
             "int x = s.nextInt(), y = s.nextInt(); System.out.println(x - y);",
         );
-        let r = run_test(&Ctx::new(&dir, None).unwrap(), None).unwrap();
+        let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
         assert!(matches!(
             &r.cases[0].verdict,
             Verdict::Wrong(Compare::Mismatch { line: 1, .. })
@@ -328,7 +328,7 @@ mod tests {
             return;
         }
         let (_t, dir) = setup(1000, "int x = ;");
-        let r = run_test(&Ctx::new(&dir, None).unwrap(), None).unwrap();
+        let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
         assert!(r.compile_error.is_some());
         assert_eq!(r.exit_code(), 1);
         assert!(render_report(&r).contains("컴파일 에러"));
@@ -340,7 +340,7 @@ mod tests {
             return;
         }
         let (_t, dir) = setup(1000, "throw new RuntimeException(\"boom\");");
-        let r = run_test(&Ctx::new(&dir, None).unwrap(), None).unwrap();
+        let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
         assert!(
             matches!(&r.cases[0].verdict, Verdict::Runtime { stderr, .. } if stderr.contains("boom"))
         );
@@ -351,7 +351,7 @@ mod tests {
             .unwrap()
             .replace("time_limit_ms = 2000", "time_limit_ms = 100");
         fs::write(&meta_path, meta).unwrap();
-        let r2 = run_test(&Ctx::new(&dir2, None).unwrap(), None).unwrap();
+        let r2 = run_test(&Ctx::new(&dir2, None).unwrap(), None, None).unwrap();
         assert_eq!(r2.cases[0].verdict, Verdict::TimeLimit);
     }
 
@@ -361,7 +361,7 @@ mod tests {
             return;
         }
         let (t, _dir) = setup(1000, AB);
-        let r = run_test(&Ctx::new(t.path(), None).unwrap(), Some(1000)).unwrap();
+        let r = run_test(&Ctx::new(t.path(), None).unwrap(), Some(1000), None).unwrap();
         assert_eq!(r.exit_code(), 0);
     }
 
@@ -376,7 +376,7 @@ mod tests {
             offline: true,
         };
         let dir = run_new(&ctx, &args, &fixtures()).unwrap().dir;
-        let r = run_test(&Ctx::new(&dir, None).unwrap(), None).unwrap();
+        let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
         assert!(r.cases.is_empty());
         assert_eq!(r.exit_code(), 1);
         assert!(render_report(&r).contains("케이스가 없어요"));
@@ -385,7 +385,7 @@ mod tests {
     #[test]
     fn outside_problem_dir_errors() {
         let t = tempfile::tempdir().unwrap();
-        let r = run_test(&Ctx::new(t.path(), None).unwrap(), None);
+        let r = run_test(&Ctx::new(t.path(), None).unwrap(), None, None);
         assert!(matches!(r, Err(BojError::NoProblemDir)));
     }
 
@@ -395,7 +395,7 @@ mod tests {
             return;
         }
         let (_t, dir) = setup(2580, "System.out.println(\"no\");");
-        let r = run_test(&Ctx::new(&dir, None).unwrap(), None).unwrap();
+        let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
         assert!(matches!(&r.cases[0].verdict, Verdict::Check(_)));
         assert_eq!(r.exit_code(), 1);
         assert!(render_report(&r).contains("확인 필요"));
@@ -426,7 +426,112 @@ mod tests {
             format!("package p1000;\nimport java.util.*;\npublic class Main {{ public static void main(String[] a) {{ Scanner s = new Scanner(System.in); {AB} }} }}\n"),
         )
         .unwrap();
-        let r = run_test(&Ctx::new(&dir, None).unwrap(), None).unwrap();
+        let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
         assert_eq!(r.exit_code(), 0, "{}", render_report(&r));
+    }
+
+    /// 언어를 지정해 1000번을 만들고 소스를 바꾼 뒤 채점한다.
+    fn ab_with(lang: &'static str, file: &str, source: &str) -> TestReport {
+        let t = tempfile::tempdir().unwrap();
+        let ctx = Ctx::new(t.path(), None).unwrap();
+        let args = NewArgs {
+            id: 1000,
+            lang: Some(lang),
+            variant: None,
+            offline: false,
+        };
+        let dir = run_new(&ctx, &args, &fixtures()).unwrap().dir;
+        fs::write(dir.join(file), source).unwrap();
+        let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
+        drop(t);
+        r
+    }
+
+    #[test]
+    fn cpp_ab() {
+        if !tool_available("cpp") {
+            return;
+        }
+        let r = ab_with(
+            "cpp",
+            "main.cpp",
+            "#include <iostream>\nint main() { long long a, b; std::cin >> a >> b; std::cout << a + b << '\\n'; }\n",
+        );
+        assert_eq!(r.exit_code(), 0, "{}", render_report(&r));
+        assert_eq!(r.limit_ms, 2000, "C++은 추가 시간이 없다");
+    }
+
+    #[test]
+    fn python_ab() {
+        if !tool_available("py") {
+            return;
+        }
+        let r = ab_with(
+            "py",
+            "main.py",
+            "a, b = map(int, input().split())\nprint(a + b)\n",
+        );
+        assert_eq!(r.exit_code(), 0, "{}", render_report(&r));
+        assert_eq!(r.limit_ms, 2000 * 3 + 2000);
+    }
+
+    #[test]
+    fn python_runtime_error() {
+        if !tool_available("py") {
+            return;
+        }
+        let r = ab_with("py", "main.py", "raise SystemExit(3)\n");
+        assert!(matches!(
+            r.cases[0].verdict,
+            Verdict::Runtime { code: Some(3), .. }
+        ));
+    }
+
+    #[test]
+    fn kotlin_ab() {
+        if !tool_available("kt") {
+            return;
+        }
+        let r = ab_with(
+            "kt",
+            "Main.kt",
+            "fun main() {\n    val (a, b) = readLine()!!.trim().split(\" \").map { it.toInt() }\n    println(a + b)\n}\n",
+        );
+        assert_eq!(r.exit_code(), 0, "{}", render_report(&r));
+        assert_eq!(r.limit_ms, 2000 * 2 + 1000);
+    }
+
+    #[test]
+    fn cpp_compile_error() {
+        if !tool_available("cpp") {
+            return;
+        }
+        let r = ab_with("cpp", "main.cpp", "int main() { return x; }\n");
+        assert!(r.compile_error.is_some());
+    }
+
+    #[test]
+    fn every_builtin_template_compiles_and_runs() {
+        for lang in ["java", "cpp", "py", "kt"] {
+            if !tool_available(lang) {
+                continue;
+            }
+            let t = tempfile::tempdir().unwrap();
+            let ctx = Ctx::new(t.path(), None).unwrap();
+            let args = NewArgs {
+                id: 1000,
+                lang: Some(lang),
+                variant: None,
+                offline: false,
+            };
+            let dir = run_new(&ctx, &args, &fixtures()).unwrap().dir;
+            let r = run_test(&Ctx::new(&dir, None).unwrap(), None, None).unwrap();
+            assert!(r.compile_error.is_none(), "{lang}: {}", render_report(&r));
+            assert!(
+                matches!(r.cases[0].verdict, Verdict::Wrong(_)),
+                "{lang}: 빈 템플릿은 정상 종료하고 틀려야 한다: {}",
+                render_report(&r)
+            );
+        }
     }
 }

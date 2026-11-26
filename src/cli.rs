@@ -26,10 +26,18 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// 컴파일하고 예제를 전부 채점해요 (번호를 생략하면 현재 폴더)
-    Test { id: Option<u32> },
+    Test {
+        id: Option<u32>,
+        /// 한 폴더에 여러 언어 소스가 있을 때 고를 언어
+        #[arg(short, long)]
+        lang: Option<String>,
+    },
     /// 제출용 코드를 클립보드에 복사해요 (패키지 줄 등 제거)
     Copy {
         id: Option<u32>,
+        /// 한 폴더에 여러 언어 소스가 있을 때 고를 언어
+        #[arg(short, long)]
+        lang: Option<String>,
         /// 클립보드 대신 표준 출력으로 내보내요
         #[arg(long)]
         stdout: bool,

@@ -34,6 +34,16 @@
 | 스페셜 저지 불일치 | "확인 필요", 코드 1 |
 | `javac` 없음 | "`javac`을 찾을 수 없어요", 코드 2 |
 
+## 언어
+
+- 내장 언어: `java`(기본), `cpp`, `py`, `kt`. 값은 `src/config/builtin.toml`에 있다.
+- `boj <번호> -l <언어>`로 다른 언어 소스를 같은 폴더에 추가할 수 있다.
+- `test`와 `copy`의 언어 결정 순서는 다음과 같다. 소스가 여러 개면 `-l`이 없을 때 종료 코드 2로 안내한다.
+  1. `-l`로 지정한 언어
+  2. 폴더에 소스가 하나뿐이면 그 언어
+  3. `.boj.toml`의 언어
+- 담당 코드: `Ctx::resolve_lang` (`src/cmd/mod.rs`)
+
 ## copy, open
 
 - `boj copy [번호] [--stdout]`: 언어 설정의 `strip` 정규식에 맞는 줄(Java는 `package` 줄)을 빼고 클립보드에 넣는다. 클립보드를 못 쓰면 표준 출력으로 낸다.
@@ -54,3 +64,10 @@
   | `boj copy --stdout` | `import`로 시작 | 0 |
   | `boj open --print` | `https://www.acmicpc.net/problem/2309` | 0 |
   | `boj 99999999` | "찾을 수 없어요", 폴더 안 생김 | 2 |
+
+- 다언어 실행 기록 (2026-11-27, macOS arm64, 실제 백준 1000번)
+  - 도구 버전: Python 3.15.0, Apple clang 21, kotlinc 2.4.21, javac 21.0.13
+  - 한 폴더에 4개 언어 소스가 있으면 `boj test`가 안내와 함께 종료 코드 2를 냈다.
+  - `-l py`, `-l cpp`, `-l kt`는 각각 1/1 맞음, 종료 코드 0이었다.
+  - 시간 제한은 py 8000ms, cpp 2000ms, kt 5000ms로 표시됐다.
+  - C++ 첫 케이스 실행 시간이 60~230ms였다. 같은 빌드의 이후 케이스는 1ms였다. macOS가 새 실행 파일을 처음 실행할 때 생기는 지연이다.
