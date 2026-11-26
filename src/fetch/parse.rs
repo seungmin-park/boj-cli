@@ -121,6 +121,14 @@ mod tests {
     }
 
     #[test]
+    fn crlf_samples_are_normalized() {
+        let html = "<span id=\"problem_title\">X</span><pre id=\"sample-input-1\">1 2\r\n3\r\n</pre><pre id=\"sample-output-1\">4</pre>";
+        let p = parse_problem(1, html).unwrap();
+        assert_eq!(p.samples[0].input, "1 2\n3\n");
+        assert_eq!(p.samples[0].output, "4\n");
+    }
+
+    #[test]
     fn fractional_seconds() {
         let html = r#"<span id="problem_title">X</span>
             <table id="problem-info"><tbody><tr><td>0.5 초 </td><td>256 MB</td></tr></tbody></table>"#;
