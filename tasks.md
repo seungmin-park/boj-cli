@@ -11,7 +11,7 @@
 | 0 | 기반 | 1/1 |
 | 1 | 순수 로직 | 6/6 |
 | 2 | 명령 | 5/5 |
-| 3 | 공개 준비 | 진행 중 |
+| 3 | 공개 준비 | 1/1 (crates.io 제외) |
 | 4 | 다언어 (v2) | 0/1 |
 
 ## Phase 0. 기반
@@ -99,11 +99,12 @@
 
 ## Phase 3. 공개 준비
 
-- [ ] **Task 13** 문서와 배포
+- [x] **Task 13** 문서와 배포 — PR #2 `5c0b3ca`, 태그 `v0.1.0`
   - [x] README(설치, 명령, 설정과 템플릿 예시, 한계)
   - [x] LICENSE: MIT OR Apache-2.0 (Rust 생태계 관례, 사용자 위임으로 결정)
-  - [ ] cargo-dist 릴리스 워크플로와 Homebrew tap
-  - [ ] `v0.1.0` 릴리스, `brew install` 확인
+  - [x] cargo-dist 릴리스 워크플로(5개 타깃, 설치 스크립트)와 Homebrew tap `seungmin-park/homebrew-tap`
+  - [x] `v0.1.0` 릴리스, `brew install seungmin-park/tap/boj`로 설치해 1000번 생성·채점 확인 (2026-11-27, macOS arm64)
+  - [ ] tap 자동 갱신: tap 전용 fine-grained 토큰을 `HOMEBREW_TAP_TOKEN`으로 등록 후 `publish-jobs = ["homebrew"]` (사용자 토큰 필요)
   - [x] 레포 공개 전환 (2026-11-27)
   - [ ] crates.io 게시 (crates.io 로그인 토큰 필요: 사용자)
 
