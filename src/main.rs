@@ -1,8 +1,10 @@
 mod cli;
+mod cmd;
 mod config;
 mod error;
 mod fetch;
 mod judge;
+mod meta;
 mod problem;
 mod template;
 
