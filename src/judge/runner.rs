@@ -179,7 +179,8 @@ pub(crate) mod tests {
         );
         let o = run_case(&run, t.path(), "hello\n", 5000).unwrap();
         assert_eq!(o.status, RunStatus::Exited(0));
-        assert_eq!(o.stdout, "hello\n");
+        // 실행기는 원래 출력을 그대로 준다 (Windows는 \r\n). 줄바꿈 무시는 비교 단계의 몫이다.
+        assert_eq!(o.stdout.replace("\r\n", "\n"), "hello\n");
     }
 
     #[test]
@@ -250,6 +251,6 @@ pub(crate) mod tests {
         let big = "9 ".repeat(1 << 19);
         let o = run_case(&run, t.path(), &big, 5000).unwrap();
         assert_eq!(o.status, RunStatus::Exited(0));
-        assert_eq!(o.stdout, "1\n");
+        assert_eq!(o.stdout.replace("\r\n", "\n"), "1\n");
     }
 }

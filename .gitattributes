@@ -1,0 +1,2 @@
+# 내장 템플릿과 fixture가 Windows 체크아웃에서 CRLF로 바뀌어 바이너리에 들어가지 않게 한다.
+* text=auto eol=lf
